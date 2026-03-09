@@ -3,7 +3,7 @@ from datetime import datetime
 
 import inspect
 
-from wxcloudrun import db
+from flask_app import db
 
 
 class User(db.Model):
@@ -192,7 +192,7 @@ class ExpressOrder(db.Model):
 
 
 # 修改后（正确示例）
-from wxcloudrun import app  # 导入应用实例
+from flask_app import app  # 导入应用实例
 
 with app.app_context():  # 手动创建应用上下文
     db.create_all()

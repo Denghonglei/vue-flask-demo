@@ -3,7 +3,7 @@ from datetime import datetime
 
 import inspect
 
-from wxcloudrun import db
+from flask_app import db
 
 
 class User(db.Model):
