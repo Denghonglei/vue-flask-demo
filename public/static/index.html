@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="./20241120_10074430.png"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <title>长发丨估值计算器</title>
+        <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#FF7D00',
+                        neutral: {
+                            100: '#F5F7FA',
+                            200: '#E4E7ED',
+                            300: '#C0C4CC',
+                            400: '#909399',
+                            500: '#606266',
+                            600: '#303133',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* 小客服图标的样式 */
+        .contact-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: #165DFF;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(22, 93, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .contact-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(22, 93, 255, 0.4);
+        }
+
+        /* 弹窗的样式 */
+        .contact-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        /* 弹窗标题栏的样式，用于拖动 */
+        .popup-header {
+            padding: 12px 16px;
+            background-color: #165DFF;
+            color: white;
+            cursor: move;
+            font-weight: 500;
+        }
+
+        /* 弹窗内容区域的样式 */
+        .popup-content {
+            padding: 16px;
+        }
+
+        .transition-custom {
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: 2px solid #165DFF !important;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-neutral-100 min-h-screen">
+<!-- 头部栏 -->
+<!-- 导航栏 -->
+<header class="sticky top-0 z-50 bg-white shadow-sm transition-all duration-300" id="navbar">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-recycle text-primary text-2xl"></i>
+            <h1 class="text-xl font-bold text-neutral-600">长发估价</h1>
+        </div>
+        <nav class="hidden md:flex space-x-6">
+            <a href="/static/testHead.html" class="text-neutral-500 hover:text-primary transition-colors">首页</a>
+            <a href="/static/index.html" class="text-primary font-medium">估价</a>
+            <a href="/static/preBooking.html" class="text-neutral-500 hover:text-primary transition-colors">预约上门</a>
+            <a href="/static/questions.html" class="text-neutral-500 hover:text-primary transition-colors">常见问题</a>
+            <a href="/static/contact.html" class="text-neutral-500 hover:text-primary transition-colors">联系我们</a>
+        </nav>
+        <button class="md:hidden text-neutral-600 focus:outline-none" id="menuBtn">
+            <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+    </div>
+    <!-- 移动端菜单 -->
+    <div class="md:hidden bg-white shadow-md absolute w-full left-0 top-full transform -translate-y-full opacity-0 transition-all duration-300 invisible"
+         id="mobileMenu">
+        <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+            <a href="/static/testHead.html" class="py-2 px-4 hover:bg-neutral-100 rounded-lg transition-colors">首页</a>
+            <a href="/static/index.html" class="py-2 px-4 bg-primary/10 text-primary rounded-lg font-medium">估价</a>
+            <a href="/static/preBooking.html"
+               class="py-2 px-4 hover:bg-neutral-100 rounded-lg transition-colors">预约上门</a>
+            <a href="/static/questions.html"
+               class="py-2 px-4 hover:bg-neutral-100 rounded-lg transition-colors">常见问题</a>
+            <a href="/static/contact.html"
+               class="py-2 px-4 hover:bg-neutral-100 rounded-lg transition-colors">联系我们</a>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-8 md:py-16">
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        <h2 class="text-2xl font-bold text-center text-neutral-700 mb-8">长发估值计算器</h2>
+
+        <div class="space-y-6">
+            <div class="space-y-2">
+                <label for="length" class="block text-sm font-medium text-neutral-700">长度 (cm，输入为5的倍数 例：55)</label>
+                <input type="number" id="length" min="30" max="200" step="5" required onblur="addDetailParam()"
+                       placeholder="取有效长度，5的倍数"
+                       class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all">
+            </div>
+
+            <div class="space-y-2">
+                <label for="thickness" class="block text-sm font-medium text-neutral-700">皮筋以下围度 (cm，一圈的周长，保留一位小数，例：8.8)</label>
+                <input type="number" id="thickness" min="0" max="16" step="0.1" required placeholder="精确到小数点后一位"
+                       class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all">
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-neutral-700">是否烫染?</label>
+                <div class="flex space-x-6">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" id="dyedNo" name="dyed" value="false" checked
+                               class="w-4 h-4 text-primary focus:ring-primary">
+                        <span>否</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" id="dyedYes" name="dyed" value="true"
+                               class="w-4 h-4 text-primary focus:ring-primary">
+                        <span>是</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-neutral-700">剪发方式:</label>
+                <div class="flex space-x-6">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" id="oneCut" name="method" value="OneCut" checked
+                               class="w-4 h-4 text-primary focus:ring-primary">
+                        <span>一刀剪</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" id="scissors" name="method" value="Scissors"
+                               class="w-4 h-4 text-primary focus:ring-primary">
+                        <span>去量抽剪</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="detailParams" class="space-y-4"></div>
+
+            <div id="response" class="text-red-500 text-sm text-center min-h-[20px]"></div>
+
+            <div class="flex gap-4 pt-4">
+                <button onclick="reset()" class="flex-1 px-4 py-3 border border-neutral-200 rounded-lg text-neutral-700 hover:bg-neutral-50 transition-all font-medium">
+                    重新输入
+                </button>
+                <button type="submit" onclick="submitForm()" id="submitBtn"
+                        class="flex-1 px-4 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all font-medium shadow-md hover:shadow-lg">
+                    计算估值
+                </button>
+            </div>
+        </div>
+
+        <!-- 小客服图标 -->
+        <div class="contact-icon" onclick="togglePopup()">💬</div>
+
+        <!-- 客服弹窗 -->
+        <div class="contact-popup" id="contactPopup">
+            <div class="popup-header" onmousedown="startDrag(event)">联系客服</div>
+            <div class="popup-content space-y-3">
+                <p class="text-neutral-600">如有任何问题，请联系我们：</p>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-brands fa-weixin text-green-500"></i>
+                    <p>客服微信：Jozuuuu</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-envelope text-primary"></i>
+                    <p>客服邮箱：ln80656155@163.com</p>
+                </div>
+                <button onclick="togglePopup()" class="w-full mt-2 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-sm transition-all">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="resultModal"
+     class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center opacity-0 invisible transition-all duration-300">
+    <div class="bg-white rounded-xl shadow-xl p-6 max-w-2xl w-full mx-4 transform scale-95 transition-all duration-300">
+        <div class="mb-6">
+            <h3 class="text-xl font-bold text-neutral-600 mb-4">估值结果</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-neutral-50 p-4 rounded-lg border border-neutral-100">
+                    <div class="text-sm text-neutral-400 mb-1">总重量</div>
+                    <div class="text-2xl font-bold text-neutral-600" id="totalWeight">-- 克</div>
+                </div>
+                <div class="bg-primary/5 p-4 rounded-lg border border-primary/10">
+                    <div class="text-sm text-neutral-400 mb-1">预估总价</div>
+                    <div class="text-2xl font-bold text-primary" id="totalPrice">¥ --</div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                    <tr class="bg-neutral-50">
+                        <th class="py-3 px-4 text-left text-sm font-medium text-neutral-500 border-b">长度（cm）</th>
+                        <th class="py-3 px-4 text-left text-sm font-medium text-neutral-500 border-b">重量(g)</th>
+                        <th class="py-3 px-4 text-left text-sm font-medium text-neutral-500 border-b">价格(¥)</th>
+                    </tr>
+                    </thead>
+                    <tbody id="detailsTable">
+                    <!-- JavaScript 将在这里填充数据 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row justify-end gap-4">
+            <button id="confirmBtn"
+                    class="px-6 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 font-medium rounded-lg transition-custom order-2 sm:order-1">
+                关闭
+            </button>
+            <button id="redirectBtn"
+                    class="px-6 py-3 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-custom shadow-md hover:shadow-lg order-1 sm:order-2">
+                预约上门回收
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // 移动端菜单切换
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    menuBtn.addEventListener('click', () => {
+        if (mobileMenu.classList.contains('invisible')) {
+            mobileMenu.classList.remove('invisible', 'opacity-0', '-translate-y-full');
+            mobileMenu.classList.add('opacity-100', 'translate-y-0');
+            menuBtn.innerHTML = '<i class="fa-solid fa-times text-xl"></i>';
+        } else {
+            mobileMenu.classList.add('opacity-0', '-translate-y-full');
+            mobileMenu.classList.remove('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                mobileMenu.classList.add('invisible');
+            }, 300);
+            menuBtn.innerHTML = '<i class="fa-solid fa-bars text-xl"></i>';
+        }
+    });
+
+    // 获取DOM元素
+    const submitBtn = document.getElementById('submitBtn');
+    const resultModal = document.getElementById('resultModal');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const redirectBtn = document.getElementById('redirectBtn');
+    const detailsTable = document.getElementById('detailsTable');
+    const totalWeight = document.getElementById('totalWeight');
+    const totalPrice = document.getElementById('totalPrice');
+    const responseMsg = document.getElementById('response');
+
+    // 渲染结果
+    function renderResult(data) {
+        // 清空表格
+        detailsTable.innerHTML = '';
+
+        // 渲染总重量和总价
+        totalWeight.textContent = `${data.result.weight} 克`;
+        totalPrice.textContent = `¥${data.result.total.toFixed(1)}`;
+
+        // 渲染详细表格
+        const details = data.result.details;
+        Object.keys(details).forEach(length => {
+            const [weight, , price] = details[length];
+            const row = document.createElement('tr');
+            row.className = 'border-b hover:bg-neutral-50 transition-colors';
+            row.innerHTML = `
+                    <td class="py-3 px-4 text-sm">> ${length}</td>
+                    <td class="py-3 px-4 text-sm">${weight}</td>
+                    <td class="py-3 px-4 text-sm font-medium text-primary">¥${price.toFixed(1)}</td>
+                `;
+            detailsTable.appendChild(row);
+        });
+    }
+
+    // 显示弹窗
+    function showModal() {
+        resultModal.classList.remove('opacity-0', 'invisible');
+        resultModal.querySelector('div').classList.remove('scale-95');
+        resultModal.querySelector('div').classList.add('scale-100');
+    }
+
+    // 隐藏弹窗
+    function hideModal() {
+        resultModal.classList.add('opacity-0');
+        resultModal.querySelector('div').classList.remove('scale-100');
+        resultModal.querySelector('div').classList.add('scale-95');
+
+        setTimeout(() => {
+            resultModal.classList.add('invisible');
+        }, 300);
+    }
+
+    // 确认按钮点击事件
+    confirmBtn.addEventListener('click', hideModal);
+
+    // 跳转按钮点击事件
+    redirectBtn.addEventListener('click', () => {
+        hideModal();
+        // 跳转到订单页面
+        window.location.href = '/static/preBooking.html';
+    });
+
+
+    let detailCount = 0;
+
+    function getValidNumber(num) {
+        return Math.floor(num / 5) * 5;
+    }
+
+    function addDetailParam() {
+        const lengthInput = document.getElementById('length');
+        const lengthValue = parseInt(lengthInput.value);
+        const validLengthValue = getValidNumber(lengthValue)
+
+        if (!lengthValue || lengthValue < 30 || lengthValue > 200) {
+            responseMsg.innerText = "请输入有效的长度（30-200cm）";
+            return;
+        }
+        responseMsg.innerText = "";
+
+        const maxDetailCount = Math.floor(validLengthValue / 10 / 2);
+        if (detailCount >= maxDetailCount) {
+            return;
+        }
+
+        const detailParamsDom = document.getElementById('detailParams')
+        detailParamsDom.innerHTML = ''
+        for (let i = 0; i < maxDetailCount; i++) {
+            const detailDiv = document.createElement('div');
+            detailDiv.className = 'space-y-2';
+            detailDiv.innerHTML = `
+                    <label for="detail${i}" class="block text-sm font-medium text-neutral-700">${validLengthValue - (maxDetailCount - i) * 10} cm处的围度 (cm):</label>
+                    <input type="number" id="detail${i}" min="0" max="16" step="0.1" required placeholder="精确到小数点后一位"
+                           class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all">
+                `;
+            detailParamsDom.appendChild(detailDiv);
+            detailCount++
+        }
+    }
+
+    function submitForm() {
+        const lengthInput = document.getElementById('length');
+        const thicknessInput = document.getElementById('thickness');
+        const dyedRadio = document.querySelector('input[name="dyed"]:checked');
+        const methodRadio = document.querySelector('input[name="method"]:checked');
+
+        // 基础验证
+        if (!lengthInput.value || !thicknessInput.value) {
+            responseMsg.innerText = "请填写所有必填字段";
+            return;
+        }
+
+        const validLength = getValidNumber(lengthInput.value);
+        if (validLength < 30 || validLength > 200) {
+            responseMsg.innerText = "长度必须在30-200cm之间";
+            return;
+        }
+
+        const thickness = parseFloat(thicknessInput.value);
+        if (thickness <= 0 || thickness > 16) {
+            responseMsg.innerText = "围度必须在0-16cm之间";
+            return;
+        }
+
+        responseMsg.innerText = "";
+
+        // 加载状态
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>计算中...';
+
+        const maxDetailCount = Math.floor(validLength / 10 / 2);
+        const details = {};
+        for (let i = 0; i < detailCount; i++) {
+            const detailInput = document.getElementById(`detail${i}`);
+            if (detailInput && detailInput.value) {
+                details[validLength - (maxDetailCount - i) * 10] = parseFloat(detailInput.value);
+            }
+        }
+
+        const data = {
+            length: validLength,
+            thickness: thickness,
+            isDyed: dyedRadio.value === "true",
+            method: methodRadio.value,
+            details: details
+        };
+
+        fetch(`/hair/estimate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`服务器响应错误`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                renderResult(data);
+                showModal();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                responseMsg.innerText = `计算失败，请检查输入是否正确`;
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '计算估值';
+            });
+    }
+
+    function reset() {
+        window.location.reload()
+    }
+
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    function togglePopup() {
+        const popup = document.getElementById('contactPopup');
+        const icon = document.querySelector('.contact-icon');
+        if (popup.style.display === 'block') {
+            popup.style.display = 'none';
+            icon.style.display = 'flex';
+        } else {
+            popup.style.display = 'block';
+            icon.style.display = 'none';
+        }
+    }
+
+    function startDrag(e) {
+        e.stopPropagation(); // 阻止点击事件冒泡，避免触发 togglePopup
+        isDragging = true;
+        const popup = document.getElementById('contactPopup');
+        offsetX = e.clientX - popup.offsetLeft;
+        offsetY = e.clientY - popup.offsetTop;
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            const popup = document.getElementById('contactPopup');
+            popup.style.left = (e.clientX - offsetX) + 'px';
+            popup.style.top = (e.clientY - offsetY) + 'px';
+        }
+    }
+
+    function stopDrag() {
+        isDragging = false;
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+    }
+</script>
+</body>
+</html>

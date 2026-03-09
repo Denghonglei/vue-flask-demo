@@ -1,0 +1,45 @@
+[build]
+  command = "npm install && npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 3000
+  port = 8888
+
+[[redirects]]
+  from = "/hair/estimate"
+  to = "/.netlify/functions/hair_estimate"
+  status = 200
+
+[[redirects]]
+  from = "/message/submit"
+  to = "/.netlify/functions/message_submit"
+  status = 200
+
+[[redirects]]
+  from = "/api/list-questions"
+  to = "/.netlify/functions/api_list_questions"
+  status = 200
+
+[[redirects]]
+  from = "/api/pre-book"
+  to = "/.netlify/functions/api_pre_book"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  # 配置Python函数
+  [functions.hair_estimate]
+    runtime = "python3.9"
+  [functions.message_submit]
+    runtime = "python3.9"
+  [functions.api_list_questions]
+    runtime = "python3.9"
+  [functions.api_pre_book]
+    runtime = "python3.9"

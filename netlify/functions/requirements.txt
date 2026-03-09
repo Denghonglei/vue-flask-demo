@@ -1,0 +1,11 @@
+flask
+flask-sqlalchemy
+flask-cors
+requests
+flask-jwt-extended
+flask-restful
+flask-caching
+flasgger
+python-dotenv
+serverless-wsgi
+
