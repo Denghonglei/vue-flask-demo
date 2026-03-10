@@ -1,5 +1,4 @@
 [build]
-  # 前端构建 + Python 依赖安装（关键：保留 pip 安装命令）
   command = "npm install && npm run build && pip install -r netlify/functions/requirements.txt"
   publish = "dist"
   functions = "netlify/functions"
@@ -9,32 +8,18 @@
   targetPort = 3000
   port = 8888
 
-# 接口转发规则（保留原有规则，补充跨域头）
+# 统一转发所有 /api/* 请求到 Flask 函数
 [[redirects]]
-  from = "/api/hair/estimate"
-  to = "/.netlify/functions/hair_estimate"
+  from = "/api/*"
+  to = "/.netlify/functions/lambda_function/:splat"
   status = 200
-  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
+  headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization"
+  }
 
-[[redirects]]
-  from = "/api/message/submit"
-  to = "/.netlify/functions/message_submit"
-  status = 200
-  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
-
-[[redirects]]
-  from = "/api/list-questions"
-  to = "/.netlify/functions/api_list_questions"
-  status = 200
-  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
-
-[[redirects]]
-  from = "/api/pre-book"
-  to = "/.netlify/functions/api_pre_book"
-  status = 200
-  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
-
-# Vue 路由转发：排除函数和 API 路径（关键：避免覆盖）
+# Vue 路由兼容
 [[redirects]]
   from = "/*"
   to = "/index.html"
