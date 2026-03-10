@@ -2,8 +2,9 @@
 import os
 import sys
 
-# 添加 backend 目录到 Python 路径
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
+# 项目根目录（lambda_function.py 位于 netlify/functions/ 下，所以上两级是根目录）
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
 
 # 导入 Flask 应用
 from backend.app import app

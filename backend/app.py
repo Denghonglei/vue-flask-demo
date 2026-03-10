@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)  # 全局跨域
 
 # 定义所有接口
-@app.route('/api/hair/estimate', methods=['GET', 'POST'])
+@app.route('/hair/estimate', methods=['GET', 'POST'])
 def hair_estimate():
     return jsonify({
         "code": 200,
@@ -15,7 +15,7 @@ def hair_estimate():
         "data": {"estimate": "1000-2000 元"}
     })
 
-@app.route('/api/message/submit', methods=['POST'])
+@app.route('/message/submit', methods=['POST'])
 def message_submit():
     return jsonify({
         "code": 200,
@@ -23,7 +23,7 @@ def message_submit():
         "data": {}
     })
 
-@app.route('/api/list-questions', methods=['GET'])
+@app.route('/list-questions', methods=['GET'])
 def list_questions():
     return jsonify({
         "code": 200,
@@ -31,7 +31,7 @@ def list_questions():
         "data": ["问题1", "问题2", "问题3"]
     })
 
-@app.route('/api/pre-book', methods=['POST'])
+@app.route('/pre-book', methods=['POST'])
 def pre_book():
     return jsonify({
         "code": 200,

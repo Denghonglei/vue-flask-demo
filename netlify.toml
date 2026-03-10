@@ -8,18 +8,15 @@
   targetPort = 3000
   port = 8888
 
-# 统一转发所有 /api/* 请求到 Flask 函数
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/lambda_function/:splat"
   status = 200
-  headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type,Authorization"
-  }
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,PUT,DELETE,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type,Authorization"
 
-# Vue 路由兼容
 [[redirects]]
   from = "/*"
   to = "/index.html"
