@@ -5,8 +5,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sha
 
 from flask import request, jsonify
 from flask_app import app, db
-from hairprice.hair_tools import calculate_mass_by_length_and_thickness, get_price_by_details, validate_dict
-from hairprice.models import Price
+from utils.hair_tools import calculate_mass_by_length_and_thickness, get_price_by_details, validate_dict
+from models.models import Price
 
 @app.route('/.netlify/functions/hair_estimate', methods=['POST'])
 def calculate():

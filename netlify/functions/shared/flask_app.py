@@ -17,4 +17,4 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 db = SQLAlchemy(app)
 
 # 导入模型
-from models import *
+from models.models import *

@@ -114,7 +114,7 @@ const submitForm = async () => {
   };
 
   try {
-    const res = await axios.post('/message/submit', formData);
+    const res = await axios.post('/api/message/submit', formData);
     const result = res.data;
     response.message = result.message || '留言发送成功！我们会尽快联系您。';
     response.type = 'success';

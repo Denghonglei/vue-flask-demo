@@ -219,7 +219,7 @@ const submitForm = async () => {
   };
 
   try {
-    const response = await axios.post(`/hair/estimate`, data)
+    const response = await axios.post(`/api/hair/estimate`, data)
     renderResult(response.data)
     showModal()
   } catch (error) {

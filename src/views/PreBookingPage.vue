@@ -4,7 +4,23 @@
 
     <main class="container mx-auto px-4 py-8 md:py-12">
       <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
-        <h2 class="text-2xl font-bold text-center text-neutral-700 mb-8">上门回收预约</h2>
+        <h2 class="text-2xl font-bold text-center text-neutral-700 mb-8">回收服务预约</h2>
+
+        <!-- 回收类型切换 -->
+        <div class="flex rounded-lg overflow-hidden border border-neutral-200 mb-8">
+          <button type="button"
+                  class="flex-1 py-3 px-4 font-medium transition-all"
+                  :class="{ 'bg-primary text-white': bookingType === 'door', 'bg-white text-neutral-600 hover:bg-neutral-50': bookingType !== 'door' }"
+                  @click="bookingType = 'door'">
+            <i class="fa-solid fa-house mr-2"></i>上门回收
+          </button>
+          <button type="button"
+                  class="flex-1 py-3 px-4 font-medium transition-all"
+                  :class="{ 'bg-primary text-white': bookingType === 'express', 'bg-white text-neutral-600 hover:bg-neutral-50': bookingType !== 'express' }"
+                  @click="bookingType = 'express'">
+            <i class="fa-solid fa-truck mr-2"></i>快递回收
+          </button>
+        </div>
 
         <form @submit.prevent="submitForm" class="space-y-6">
           <div class="space-y-2">
@@ -21,36 +37,77 @@
                    placeholder="请输入您的手机号码">
           </div>
 
-          <div class="space-y-2">
-            <label for="city" class="block text-sm font-medium text-neutral-700">所在城市 <span class="text-red-500">*</span></label>
-            <input type="text" id="city" v-model="form.city" required
-                   class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all"
-                   placeholder="请输入您所在的城市">
-          </div>
+          <!-- 上门回收专属字段 -->
+          <template v-if="bookingType === 'door'">
+            <div class="space-y-2">
+              <label for="city" class="block text-sm font-medium text-neutral-700">所在城市 <span class="text-red-500">*</span></label>
+              <input type="text" id="city" v-model="form.city" :required="bookingType === 'door'"
+                     class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all"
+                     placeholder="请输入您所在的城市">
+            </div>
 
-          <div class="space-y-2">
-            <label for="address" class="block text-sm font-medium text-neutral-700">详细地址 <span class="text-red-500">*</span></label>
-            <textarea id="address" v-model="form.address" rows="3" required
-                      class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                      placeholder="请输入详细地址，方便我们安排上门回收"></textarea>
-          </div>
+            <div class="space-y-2">
+              <label for="address" class="block text-sm font-medium text-neutral-700">详细地址 <span class="text-red-500">*</span></label>
+              <textarea id="address" v-model="form.address" rows="3" :required="bookingType === 'door'"
+                        class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                        placeholder="请输入详细地址，方便我们安排上门回收"></textarea>
+            </div>
 
-          <div class="space-y-2">
-            <label for="date" class="block text-sm font-medium text-neutral-700">期望上门日期 <span class="text-red-500">*</span></label>
-            <input type="date" id="date" v-model="form.date" required
-                   class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all">
-          </div>
+            <div class="space-y-2">
+              <label for="date" class="block text-sm font-medium text-neutral-700">期望上门日期 <span class="text-red-500">*</span></label>
+              <input type="date" id="date" v-model="form.date" :required="bookingType === 'door'"
+                     class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all">
+            </div>
 
-          <div class="space-y-2">
-            <label for="time" class="block text-sm font-medium text-neutral-700">期望上门时间段 <span class="text-red-500">*</span></label>
-            <select id="time" v-model="form.time" required
-                    class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all">
-              <option value="">请选择时间段</option>
-              <option value="morning">上午 9:00-12:00</option>
-              <option value="afternoon">下午 14:00-18:00</option>
-              <option value="evening">晚上 18:00-21:00</option>
-            </select>
-          </div>
+            <div class="space-y-2">
+              <label for="time" class="block text-sm font-medium text-neutral-700">期望上门时间段 <span class="text-red-500">*</span></label>
+              <select id="time" v-model="form.time" :required="bookingType === 'door'"
+                      class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all">
+                <option value="">请选择时间段</option>
+                <option value="morning">上午 9:00-12:00</option>
+                <option value="afternoon">下午 14:00-18:00</option>
+                <option value="evening">晚上 18:00-21:00</option>
+              </select>
+            </div>
+          </template>
+
+          <!-- 快递回收专属字段 -->
+          <template v-if="bookingType === 'express'">
+            <div class="space-y-2">
+              <label for="express_company" class="block text-sm font-medium text-neutral-700">快递公司 <span class="text-red-500">*</span></label>
+              <input type="text" id="express_company" v-model="form.express_company" :required="bookingType === 'express'"
+                     class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all"
+                     placeholder="请输入快递公司名称">
+            </div>
+
+            <div class="space-y-2">
+              <label for="tracking_number" class="block text-sm font-medium text-neutral-700">快递单号 <span class="text-red-500">*</span></label>
+              <input type="text" id="tracking_number" v-model="form.tracking_number" :required="bookingType === 'express'"
+                     class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary/20 transition-all"
+                     placeholder="请输入快递单号">
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-neutral-700">是否已知晓回收规则？ <span class="text-red-500">*</span></label>
+              <div class="flex space-x-6">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                  <input type="radio" v-model="form.is_know_rules" :value="true" :required="bookingType === 'express'"
+                         class="w-4 h-4 text-primary focus:ring-primary">
+                  <span>是，已了解</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                  <input type="radio" v-model="form.is_know_rules" :value="false" :required="bookingType === 'express'"
+                         class="w-4 h-4 text-primary focus:ring-primary">
+                  <span>否，需要说明</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="p-4 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
+              <i class="fa-solid fa-info-circle mr-2"></i>
+              快递回收说明：请将头发妥善包装后寄出，我们收到后会在24小时内完成检测并打款。
+            </div>
+          </template>
 
           <div class="space-y-2">
             <label for="length" class="block text-sm font-medium text-neutral-700">头发大概长度（cm） <span class="text-red-500">*</span></label>
@@ -102,13 +159,21 @@ import { reactive, ref } from 'vue'
 import Navbar from '../components/Navbar.vue'
 import axios from 'axios'
 
+const bookingType = ref('door') // door: 上门回收, express: 快递回收
+
 const form = reactive({
   name: '',
   phone: '',
+  // 上门回收字段
   city: '',
   address: '',
   date: '',
   time: '',
+  // 快递回收字段
+  express_company: '',
+  tracking_number: '',
+  is_know_rules: null,
+  // 公共字段
   length: null,
   isDyed: false,
   remark: ''
@@ -122,7 +187,16 @@ const response = reactive({
 
 const submitForm = async () => {
   // 基础验证
-  if (!form.name || !form.phone || !form.city || !form.address || !form.date || !form.time || !form.length) {
+  let requiredFields = ['name', 'phone', 'length'];
+
+  if (bookingType.value === 'door') {
+    requiredFields = requiredFields.concat(['city', 'address', 'date', 'time']);
+  } else {
+    requiredFields = requiredFields.concat(['express_company', 'tracking_number', 'is_know_rules']);
+  }
+
+  const missingFields = requiredFields.filter(field => !form[field]);
+  if (missingFields.length > 0) {
     response.message = '请填写所有必填字段';
     response.type = 'error';
     return;
@@ -139,25 +213,33 @@ const submitForm = async () => {
   response.message = '';
 
   try {
-    const res = await axios.post('/booking/submit', form);
+    const submitData = {
+      ...form,
+      type: bookingType.value // 提交预约类型
+    };
+    const res = await axios.post('/api/pre-book', submitData);
     if (res.data.code === 0) {
-      response.message = '预约提交成功！我们会尽快与您联系确认。';
+      response.message = bookingType.value === 'door'
+        ? '预约提交成功！我们会尽快与您联系确认上门时间。'
+        : '快递信息提交成功！我们收到快递后会第一时间处理。';
       response.type = 'success';
       // 重置表单
       Object.keys(form).forEach(key => {
-        form[key] = key === 'isDyed' ? false : ''
+        form[key] = (key === 'isDyed' || key === 'is_know_rules') ? false : ''
       })
     } else {
-      throw new Error(res.data.message || '预约提交失败')
+      throw new Error(res.data.message || '提交失败')
     }
   } catch (error) {
     console.error('Error:', error);
     // 模拟提交成功
-    response.message = '预约提交成功！我们会尽快与您联系确认。';
+    response.message = bookingType.value === 'door'
+      ? '预约提交成功！我们会尽快与您联系确认上门时间。'
+      : '快递信息提交成功！我们收到快递后会第一时间处理。';
     response.type = 'success';
     // 重置表单
     Object.keys(form).forEach(key => {
-      form[key] = key === 'isDyed' ? false : ''
+      form[key] = (key === 'isDyed' || key === 'is_know_rules') ? false : ''
     })
   } finally {
     loading.value = false;

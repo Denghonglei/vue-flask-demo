@@ -4,8 +4,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sha
 
 from flask import request, jsonify
 from flask_app import app, db
-from hairprice.models import ConfigDataModel
-from common_utils import list_api_response
+from models.models import ConfigDataModel
+from utils.common_utils import list_api_response
 
 @app.route('/.netlify/functions/api_list_questions', methods=['GET'])
 def list_questions():

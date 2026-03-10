@@ -18,8 +18,8 @@
       </button>
     </div>
     <!-- 移动端菜单 -->
-    <div class="md:hidden bg-white shadow-md absolute w-full left-0 top-full transform -translate-y-full opacity-0 transition-all duration-300 invisible"
-         :class="{ 'invisible opacity-0 -translate-y-full': !menuOpen, 'opacity-100 translate-y-0': menuOpen }"
+    <div class="md:hidden bg-white shadow-md absolute w-full left-0 top-full transform -translate-y-full opacity-0 transition-all duration-300 z-40"
+         :class="{ 'opacity-0 -translate-y-full pointer-events-none': !menuOpen, 'opacity-100 translate-y-0 pointer-events-auto': menuOpen }"
          id="mobileMenu">
       <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
         <router-link to="/" class="py-2 px-4 hover:bg-neutral-100 rounded-lg transition-colors" :class="{ 'bg-primary/10 text-primary font-medium': $route.path === '/' }">首页</router-link>

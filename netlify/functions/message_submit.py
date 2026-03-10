@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sha
 
 from flask import request, jsonify
 from flask_app import app, db
-from hairprice.models import Message
+from models.models import Message
 
 # 配置邮件信息
 MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.163.com')
