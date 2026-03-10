@@ -1,26 +1,19 @@
 [build]
-  # 补充 Python 依赖安装命令（根据你的 requirements.txt 路径调整）
+  # 前端构建 + Python 依赖安装（关键：保留 pip 安装命令）
   command = "npm install && npm run build && pip install -r netlify/functions/requirements.txt"
   publish = "dist"
   functions = "netlify/functions"
-
-# 关键：指定 Python 运行时版本（和你日志中的 3.11 匹配）
-[functions]
-  runtime = "python3.11"
-  # 兼容前端构建（可选）
-  node_bundler = "esbuild"
 
 [dev]
   command = "npm run dev"
   targetPort = 3000
   port = 8888
 
-# 接口转发规则（保留你的原有规则，补充跨域头）
+# 接口转发规则（保留原有规则，补充跨域头）
 [[redirects]]
   from = "/api/hair/estimate"
   to = "/.netlify/functions/hair_estimate"
   status = 200
-  # 补充跨域头，避免前端调用报错
   headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
 
 [[redirects]]
@@ -41,7 +34,7 @@
   status = 200
   headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
 
-# Vue 路由转发：排除函数和 API 路径，避免覆盖
+# Vue 路由转发：排除函数和 API 路径（关键：避免覆盖）
 [[redirects]]
   from = "/*"
   to = "/index.html"
