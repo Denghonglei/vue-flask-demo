@@ -1,45 +1,49 @@
 [build]
-  command = "npm install && npm run build"
+  # 补充 Python 依赖安装命令（根据你的 requirements.txt 路径调整）
+  command = "npm install && npm run build && pip install -r netlify/functions/requirements.txt"
   publish = "dist"
   functions = "netlify/functions"
+
+# 关键：指定 Python 运行时版本（和你日志中的 3.11 匹配）
+[functions]
+  runtime = "python3.11"
+  # 兼容前端构建（可选）
+  node_bundler = "esbuild"
 
 [dev]
   command = "npm run dev"
   targetPort = 3000
   port = 8888
 
+# 接口转发规则（保留你的原有规则，补充跨域头）
 [[redirects]]
   from = "/api/hair/estimate"
   to = "/.netlify/functions/hair_estimate"
   status = 200
+  # 补充跨域头，避免前端调用报错
+  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
 
 [[redirects]]
   from = "/api/message/submit"
   to = "/.netlify/functions/message_submit"
   status = 200
+  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
 
 [[redirects]]
   from = "/api/list-questions"
   to = "/.netlify/functions/api_list_questions"
   status = 200
+  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
 
 [[redirects]]
   from = "/api/pre-book"
   to = "/.netlify/functions/api_pre_book"
   status = 200
+  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET,POST,OPTIONS"}
 
+# Vue 路由转发：排除函数和 API 路径，避免覆盖
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[functions]
-  # 配置Python函数
-  [functions.hair_estimate]
-    runtime = "python3.9"
-  [functions.message_submit]
-    runtime = "python3.9"
-  [functions.api_list_questions]
-    runtime = "python3.9"
-  [functions.api_pre_book]
-    runtime = "python3.9"
+  condition = {not = {path = ["/api/*", "/.netlify/*"]}}
