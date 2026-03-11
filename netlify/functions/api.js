@@ -1,11 +1,14 @@
 import { spawn } from 'child_process';
 import path from 'path';
 
-// 🔥 核心修复：直接基于当前工作目录拼接路径（无需 __dirname）
+// Python执行路径适配：线上Netlify环境用python3，本地用python
+const pythonExec = process.env.NETLIFY ? 'python3' : 'python';
+
+// 路径拼接：使用 __dirname 确保本地和线上环境路径一致
 // 固定规则：Python 脚本都放在 functions/python_scripts 下
 const getPythonScriptPath = (relativePath) => {
-  // 拼接路径：当前工作目录 → netlify → functions → 传入的相对路径
-  return path.join(process.cwd(), 'netlify', 'functions', relativePath);
+  // 拼接路径：当前api.js所在目录 → 传入的相对路径
+  return path.join(__dirname, relativePath);
 };
 
 // 路由映射表（请求路径 → Python 脚本相对路径）
@@ -75,7 +78,7 @@ export const handler = async (event, context) => {
     // 6. 执行 Python 脚本（使用spawn传递参数数组，彻底解决转义问题）
     const paramsStr = JSON.stringify(params);
     const pythonResult = await new Promise((resolve, reject) => {
-      const pythonProcess = spawn('python', [pythonScriptPath, paramsStr]);
+      const pythonProcess = spawn(pythonExec, [pythonScriptPath, paramsStr]);
       let stdout = '';
       let stderr = '';
 
