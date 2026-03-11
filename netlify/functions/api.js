@@ -37,6 +37,13 @@ const handleError = (message) => ({
 
 // 统一入口函数
 export const handler = async (event, context) => {
+  // 调试日志：打印所有请求信息
+  console.log('=== 收到请求 ===');
+  console.log('请求方法:', event.httpMethod);
+  console.log('event.path:', event.path);
+  console.log('x-nf-original-url:', event.headers['x-nf-original-url']);
+  console.log('所有headers:', JSON.stringify(event.headers, null, 2));
+
   // 1. 处理 OPTIONS 预检请求
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -50,28 +57,59 @@ export const handler = async (event, context) => {
     // 2. 获取请求路径（兼容本地和线上环境）
     // 线上环境经过redirect转发，需要从x-nf-original-url头获取原始路径
     let requestPath = event.headers['x-nf-original-url'] || event.path;
+    console.log('原始requestPath:', requestPath);
+
     // 提取/api/开头的路径部分
     const apiPathMatch = requestPath.match(/\/api\/[^?#]+/);
     if (apiPathMatch) {
       requestPath = apiPathMatch[0];
     }
+    console.log('处理后requestPath:', requestPath);
 
     // 3. 匹配对应的 Python 脚本相对路径
     const pythonScriptRelativePath = routeMap[requestPath];
+    console.log('匹配到的脚本相对路径:', pythonScriptRelativePath);
+
     if (!pythonScriptRelativePath) {
+      console.log('接口不存在，可用路由:', Object.keys(routeMap));
       return {
         statusCode: 404,
         headers: getHeaders(),
         body: JSON.stringify({
           success: false,
           message: `接口不存在: ${requestPath}`,
-          availableRoutes: Object.keys(routeMap)
+          availableRoutes: Object.keys(routeMap),
+          debug: {
+            originalPath: event.headers['x-nf-original-url'] || event.path,
+            processedPath: requestPath
+          }
         })
       };
     }
 
-    // 4. 拼接 Python 脚本完整路径（核心：用 process.cwd() 替代 __dirname）
+    // 4. 拼接 Python 脚本完整路径
     const pythonScriptPath = getPythonScriptPath(pythonScriptRelativePath);
+    console.log('脚本完整路径:', pythonScriptPath);
+
+    // 调试：检查文件是否存在
+    const fs = await import('fs');
+    const scriptExists = fs.existsSync(pythonScriptPath);
+    console.log('脚本文件是否存在:', scriptExists);
+
+    // 调试：列出当前目录结构
+    const currentDir = __dirname;
+    console.log('当前目录:', currentDir);
+    const filesInDir = fs.readdirSync(currentDir);
+    console.log('当前目录下的文件:', JSON.stringify(filesInDir, null, 2));
+
+    // 检查python_scripts目录是否存在
+    const pythonScriptsDir = path.join(__dirname, 'python_scripts');
+    const pythonScriptsExists = fs.existsSync(pythonScriptsDir);
+    console.log('python_scripts目录是否存在:', pythonScriptsExists);
+    if (pythonScriptsExists) {
+      const pythonScriptsFiles = fs.readdirSync(pythonScriptsDir);
+      console.log('python_scripts目录下的文件:', JSON.stringify(pythonScriptsFiles, null, 2));
+    }
 
     // 5. 解析请求参数
     let params = {};
@@ -83,29 +121,42 @@ export const handler = async (event, context) => {
 
     // 6. 执行 Python 脚本（使用spawn传递参数数组，彻底解决转义问题）
     const paramsStr = JSON.stringify(params);
+    console.log('Python执行路径:', pythonExec);
+    console.log('传递的参数:', paramsStr);
+
     const pythonResult = await new Promise((resolve, reject) => {
       const pythonProcess = spawn(pythonExec, [pythonScriptPath, paramsStr]);
       let stdout = '';
       let stderr = '';
 
       pythonProcess.stdout.on('data', (data) => {
-        stdout += data.toString();
+        const str = data.toString();
+        console.log('Python stdout:', str);
+        stdout += str;
       });
 
       pythonProcess.stderr.on('data', (data) => {
-        stderr += data.toString();
+        const str = data.toString();
+        console.error('Python stderr:', str);
+        stderr += str;
       });
 
       pythonProcess.on('close', (code) => {
+        console.log('Python进程退出码:', code);
         if (code !== 0) {
-          reject(`Python 执行失败: ${stderr} | 脚本路径: ${pythonScriptPath}`);
+          const errorMsg = `Python 执行失败: ${stderr} | 脚本路径: ${pythonScriptPath} | 退出码: ${code}`;
+          console.error(errorMsg);
+          reject(errorMsg);
         } else {
+          console.log('Python执行成功，输出:', stdout.trim());
           resolve(stdout.trim());
         }
       });
 
       pythonProcess.on('error', (error) => {
-        reject(`Python 启动失败: ${error.message}`);
+        const errorMsg = `Python 启动失败: ${error.message}`;
+        console.error(errorMsg);
+        reject(errorMsg);
       });
     });
 
@@ -124,6 +175,8 @@ export const handler = async (event, context) => {
     };
 
   } catch (error) {
+    console.error('全局错误:', error.toString());
+    console.error('错误堆栈:', error.stack);
     return handleError(error.toString());
   }
 };
