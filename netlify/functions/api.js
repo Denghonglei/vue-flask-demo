@@ -1,8 +1,44 @@
 import { spawn } from 'child_process';
 import path from 'path';
 
-// Python执行路径适配：线上Netlify环境用python3，本地用python
-const pythonExec = process.env.NETLIFY ? 'python3' : 'python';
+// Python执行路径适配：尝试多个可能的Python命令
+const possiblePythonExecs = process.env.NETLIFY
+  ? ['python3', 'python']
+  : ['python', 'python3', 'py'];
+
+// 检测可用的Python命令
+const { execSync } = await import('child_process');
+let pythonExec = null;
+for (const exec of possiblePythonExecs) {
+  try {
+    execSync(`${exec} --version`, { stdio: 'ignore' });
+    pythonExec = exec;
+    break;
+  } catch (e) {
+    // 继续尝试下一个
+  }
+}
+
+if (!pythonExec) {
+  // 兜底方案：硬编码常用路径
+  const fallbackPaths = process.env.NETLIFY
+    ? ['/usr/bin/python3', '/usr/local/bin/python3']
+    : ['C:\\Python39\\python.exe', 'C:\\Python310\\python.exe', '/usr/bin/python3'];
+
+  for (const path of fallbackPaths) {
+    try {
+      execSync(`${path} --version`, { stdio: 'ignore' });
+      pythonExec = path;
+      break;
+    } catch (e) {
+      // 继续尝试下一个
+    }
+  }
+
+  if (!pythonExec) {
+    throw new Error('未找到可用的Python执行程序，请检查环境配置');
+  }
+}
 
 // 路径拼接：使用 __dirname 确保本地和线上环境路径一致
 // 固定规则：Python 脚本都放在 functions/python_scripts 下
