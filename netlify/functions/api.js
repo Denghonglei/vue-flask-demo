@@ -5,16 +5,22 @@ import path from 'path';
 const getPythonExec = () => {
   // 线上Netlify环境用python3
   if (process.env.NETLIFY) return 'python3';
-  // 本地环境依次尝试python、python3、py（适配Windows/macOS/Linux）
-  if (process.platform === 'win32') return 'py';
-  return 'python3';
+  // 本地Windows环境优先用python，不行再用py
+  return process.platform === 'win32' ? 'python' : 'python3';
 };
 
-// 路径拼接：使用 __dirname 确保本地和线上环境路径一致
-// 固定规则：Python 脚本都放在 functions/python_scripts 下
+// 路径拼接：优先使用process.cwd()（项目根目录），兼容Netlify Dev临时目录问题
+// 固定规则：Python 脚本都放在 netlify/functions/python_scripts 下
 const getPythonScriptPath = (relativePath) => {
-  // 拼接路径：当前api.js所在目录 → 传入的相对路径
-  return path.join(__dirname, relativePath);
+  // 线上环境：__dirname是函数实际目录
+  // 本地Netlify Dev：__dirname是临时打包目录，process.cwd()是项目根目录
+  if (process.env.NETLIFY) {
+    // 线上环境直接使用__dirname
+    return path.join(__dirname, relativePath);
+  } else {
+    // 本地开发环境：从项目根目录拼接路径
+    return path.join(process.cwd(), 'netlify', 'functions', relativePath);
+  }
 };
 
 // 路由映射表（请求路径 → Python 脚本相对路径）
