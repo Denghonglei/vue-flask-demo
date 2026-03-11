@@ -1,44 +1,44 @@
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import path from 'path';
 
 // Python执行路径适配：尝试多个可能的Python命令
-const possiblePythonExecs = process.env.NETLIFY
-  ? ['python3', 'python']
-  : ['python', 'python3', 'py'];
+let pythonExec = null;
 
 // 检测可用的Python命令
-const { execSync } = await import('child_process');
-let pythonExec = null;
-for (const exec of possiblePythonExecs) {
-  try {
-    execSync(`${exec} --version`, { stdio: 'ignore' });
-    pythonExec = exec;
-    break;
-  } catch (e) {
-    // 继续尝试下一个
-  }
-}
+const getPythonExec = () => {
+  if (pythonExec) return pythonExec;
 
-if (!pythonExec) {
-  // 兜底方案：硬编码常用路径
-  const fallbackPaths = process.env.NETLIFY
-    ? ['/usr/bin/python3', '/usr/local/bin/python3']
-    : ['C:\\Python39\\python.exe', 'C:\\Python310\\python.exe', '/usr/bin/python3'];
+  const possiblePythonExecs = process.env.NETLIFY
+    ? ['python3', 'python']
+    : ['python', 'python3', 'py'];
 
-  for (const path of fallbackPaths) {
+  for (const exec of possiblePythonExecs) {
     try {
-      execSync(`${path} --version`, { stdio: 'ignore' });
-      pythonExec = path;
-      break;
+      execSync(`${exec} --version`, { stdio: 'ignore' });
+      pythonExec = exec;
+      return pythonExec;
     } catch (e) {
       // 继续尝试下一个
     }
   }
 
-  if (!pythonExec) {
-    throw new Error('未找到可用的Python执行程序，请检查环境配置');
+  // 兜底方案：硬编码常用路径
+  const fallbackPaths = process.env.NETLIFY
+    ? ['/usr/bin/python3', '/usr/local/bin/python3']
+    : ['C:\\Python39\\python.exe', 'C:\\Python310\\python.exe', '/usr/bin/python3'];
+
+  for (const execPath of fallbackPaths) {
+    try {
+      execSync(`${execPath} --version`, { stdio: 'ignore' });
+      pythonExec = execPath;
+      return pythonExec;
+    } catch (e) {
+      // 继续尝试下一个
+    }
   }
-}
+
+  throw new Error('未找到可用的Python执行程序，请检查环境配置');
+};
 
 // 路径拼接：使用 __dirname 确保本地和线上环境路径一致
 // 固定规则：Python 脚本都放在 functions/python_scripts 下
@@ -146,6 +146,7 @@ export const handler = async (event, context) => {
 
     // 6. 执行 Python 脚本（使用spawn传递参数数组，彻底解决转义问题）
     const paramsStr = JSON.stringify(params);
+    const pythonExec = getPythonExec();
     const pythonResult = await new Promise((resolve, reject) => {
       const pythonProcess = spawn(pythonExec, [pythonScriptPath, paramsStr]);
       let stdout = '';
