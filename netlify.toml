@@ -7,10 +7,10 @@
 [dev]
   targetPort = 3000
 
-# 所有 /api/* 请求都转发到统一的 Node.js 入口
+# 所有 /api/* 请求都转发到统一的 Node.js 入口，传递原始路径作为查询参数
 [[redirects]]
 from = "/api/*"
-to = "/.netlify/functions/api"
+to = "/.netlify/functions/api?path=/api/:splat"
 status = 200
 force = true
 

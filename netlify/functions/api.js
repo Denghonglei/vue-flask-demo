@@ -54,48 +54,47 @@ export const handler = async (event, context) => {
   }
 
   try {
-    // 2. 获取请求路径（兼容本地和线上环境）
-    console.log('所有headers的键:', Object.keys(event.headers).map(k => `${k}: ${event.headers[k]}`));
+    // 2. 获取请求路径（优先从查询参数获取，兼容Netlify重定向）
+    let requestPath = null;
 
-    // 尝试从各种可能的头获取原始路径（Netlify的头大小写不固定）
-    let requestPath = event.path;
-    const possibleHeaders = [
-      'x-nf-original-url',
-      'X-Nf-Original-Url',
-      'X-NF-ORIGINAL-URL',
-      'referer',
-      'Referer'
-    ];
-
-    for (const header of possibleHeaders) {
-      if (event.headers[header]) {
-        console.log(`找到头 ${header}: ${event.headers[header]}`);
-        requestPath = event.headers[header];
-        break;
-      }
-    }
-
-    // 如果有rawUrl字段也尝试使用
-    if (event.rawUrl) {
-      console.log('找到rawUrl:', event.rawUrl);
-      requestPath = event.rawUrl;
-    }
-
-    console.log('原始requestPath:', requestPath);
-
-    // 提取/api/开头的路径部分
-    const apiPathMatch = requestPath.match(/\/api\/[^?#]+/);
-    if (apiPathMatch) {
-      requestPath = apiPathMatch[0];
+    // 最高优先级：从redirect传递的查询参数获取原始路径
+    if (event.queryStringParameters?.path) {
+      requestPath = event.queryStringParameters.path;
+      console.log('从查询参数获取路径:', requestPath);
     } else {
-      // 备用方案：如果还是找不到，尝试从请求中提取路径
-      console.log('未找到/api/路径，使用备用方案');
-      // 如果直接访问函数，尝试从query或者其他地方获取
-      if (event.queryStringParameters?.path) {
-        requestPath = event.queryStringParameters.path;
+      // 备用方案：尝试从各种可能的头获取
+      console.log('所有headers的键:', Object.keys(event.headers).map(k => `${k}: ${event.headers[k]}`));
+      requestPath = event.path;
+      const possibleHeaders = [
+        'x-nf-original-url',
+        'X-Nf-Original-Url',
+        'X-NF-ORIGINAL-URL',
+        'referer',
+        'Referer'
+      ];
+
+      for (const header of possibleHeaders) {
+        if (event.headers[header]) {
+          console.log(`找到头 ${header}: ${event.headers[header]}`);
+          requestPath = event.headers[header];
+          break;
+        }
+      }
+
+      // 如果有rawUrl字段也尝试使用
+      if (event.rawUrl) {
+        console.log('找到rawUrl:', event.rawUrl);
+        requestPath = event.rawUrl;
+      }
+
+      // 提取/api/开头的路径部分
+      const apiPathMatch = requestPath.match(/\/api\/[^?#]+/);
+      if (apiPathMatch) {
+        requestPath = apiPathMatch[0];
       }
     }
-    console.log('处理后requestPath:', requestPath);
+
+    console.log('最终requestPath:', requestPath);
 
     // 3. 匹配对应的 Python 脚本相对路径
     const pythonScriptRelativePath = routeMap[requestPath];
