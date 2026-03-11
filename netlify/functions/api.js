@@ -55,14 +55,45 @@ export const handler = async (event, context) => {
 
   try {
     // 2. 获取请求路径（兼容本地和线上环境）
-    // 线上环境经过redirect转发，需要从x-nf-original-url头获取原始路径
-    let requestPath = event.headers['x-nf-original-url'] || event.path;
+    console.log('所有headers的键:', Object.keys(event.headers).map(k => `${k}: ${event.headers[k]}`));
+
+    // 尝试从各种可能的头获取原始路径（Netlify的头大小写不固定）
+    let requestPath = event.path;
+    const possibleHeaders = [
+      'x-nf-original-url',
+      'X-Nf-Original-Url',
+      'X-NF-ORIGINAL-URL',
+      'referer',
+      'Referer'
+    ];
+
+    for (const header of possibleHeaders) {
+      if (event.headers[header]) {
+        console.log(`找到头 ${header}: ${event.headers[header]}`);
+        requestPath = event.headers[header];
+        break;
+      }
+    }
+
+    // 如果有rawUrl字段也尝试使用
+    if (event.rawUrl) {
+      console.log('找到rawUrl:', event.rawUrl);
+      requestPath = event.rawUrl;
+    }
+
     console.log('原始requestPath:', requestPath);
 
     // 提取/api/开头的路径部分
     const apiPathMatch = requestPath.match(/\/api\/[^?#]+/);
     if (apiPathMatch) {
       requestPath = apiPathMatch[0];
+    } else {
+      // 备用方案：如果还是找不到，尝试从请求中提取路径
+      console.log('未找到/api/路径，使用备用方案');
+      // 如果直接访问函数，尝试从query或者其他地方获取
+      if (event.queryStringParameters?.path) {
+        requestPath = event.queryStringParameters.path;
+      }
     }
     console.log('处理后requestPath:', requestPath);
 
@@ -102,13 +133,42 @@ export const handler = async (event, context) => {
     const filesInDir = fs.readdirSync(currentDir);
     console.log('当前目录下的文件:', JSON.stringify(filesInDir, null, 2));
 
-    // 检查python_scripts目录是否存在
-    const pythonScriptsDir = path.join(__dirname, 'python_scripts');
-    const pythonScriptsExists = fs.existsSync(pythonScriptsDir);
-    console.log('python_scripts目录是否存在:', pythonScriptsExists);
-    if (pythonScriptsExists) {
-      const pythonScriptsFiles = fs.readdirSync(pythonScriptsDir);
-      console.log('python_scripts目录下的文件:', JSON.stringify(pythonScriptsFiles, null, 2));
+    // 检查python_scripts目录是否存在（尝试多个可能路径）
+    const possiblePythonDirs = [
+      path.join(__dirname, 'python_scripts'),
+      path.join(process.cwd(), 'python_scripts'),
+      path.join(__dirname, '..', 'python_scripts'),
+      '/opt/python_scripts'
+    ];
+
+    let pythonScriptsDir = null;
+    for (const dir of possiblePythonDirs) {
+      if (fs.existsSync(dir)) {
+        pythonScriptsDir = dir;
+        console.log('找到python_scripts目录:', dir);
+        const pythonScriptsFiles = fs.readdirSync(dir);
+        console.log('python_scripts目录下的文件:', JSON.stringify(pythonScriptsFiles, null, 2));
+        break;
+      } else {
+        console.log('目录不存在:', dir);
+      }
+    }
+
+    if (!pythonScriptsDir) {
+      console.error('未找到python_scripts目录！');
+      return {
+        statusCode: 500,
+        headers: getHeaders(),
+        body: JSON.stringify({
+          success: false,
+          message: '服务器配置错误：Python脚本目录不存在',
+          debug: {
+            possibleDirs: possiblePythonDirs,
+            cwd: process.cwd(),
+            dirname: __dirname
+          }
+        })
+      };
     }
 
     // 5. 解析请求参数
