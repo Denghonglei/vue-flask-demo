@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import Navbar from '../components/Navbar.vue'
 import axios from 'axios'
 
@@ -177,6 +177,34 @@ const form = reactive({
   length: null,
   isDyed: false,
   remark: ''
+})
+
+// 页面加载时自动设置默认预约时间为最近可预约时间段
+onMounted(() => {
+  const now = new Date()
+  const hour = now.getHours()
+  let defaultDate = now.toISOString().split('T')[0] // 默认今天
+  let defaultTime = 'morning'
+
+  if (hour < 9) {
+    // 9点前，默认今天上午
+    defaultTime = 'morning'
+  } else if (hour < 14) {
+    // 9点-14点，默认今天下午
+    defaultTime = 'afternoon'
+  } else if (hour < 18) {
+    // 14点-18点，默认今天晚上
+    defaultTime = 'evening'
+  } else {
+    // 18点后，默认明天上午
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    defaultDate = tomorrow.toISOString().split('T')[0]
+    defaultTime = 'morning'
+  }
+
+  form.date = defaultDate
+  form.time = defaultTime
 })
 
 const loading = ref(false)
@@ -218,10 +246,11 @@ const submitForm = async () => {
       type: bookingType.value // 提交预约类型
     };
     const res = await axios.post('/api/pre-book', submitData);
-    if (res.data.code === 0) {
+    if (res.data.success) {
+      const orderNo = res.data.data.orderNo;
       response.message = bookingType.value === 'door'
-        ? '预约提交成功！我们会尽快与您联系确认上门时间。'
-        : '快递信息提交成功！我们收到快递后会第一时间处理。';
+        ? `预约提交成功！您的订单号：${orderNo}，我们会尽快与您联系确认上门时间。`
+        : `快递信息提交成功！您的订单号：${orderNo}，我们收到快递后会第一时间处理。`;
       response.type = 'success';
       // 重置表单
       Object.keys(form).forEach(key => {
@@ -232,15 +261,8 @@ const submitForm = async () => {
     }
   } catch (error) {
     console.error('Error:', error);
-    // 模拟提交成功
-    response.message = bookingType.value === 'door'
-      ? '预约提交成功！我们会尽快与您联系确认上门时间。'
-      : '快递信息提交成功！我们收到快递后会第一时间处理。';
-    response.type = 'success';
-    // 重置表单
-    Object.keys(form).forEach(key => {
-      form[key] = (key === 'isDyed' || key === 'is_know_rules') ? false : ''
-    })
+    response.message = error.response?.data?.message || error.message || '提交失败，请稍后重试';
+    response.type = 'error';
   } finally {
     loading.value = false;
   }

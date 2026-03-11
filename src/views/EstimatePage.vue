@@ -231,9 +231,10 @@ const submitForm = async () => {
 }
 
 const renderResult = (data) => {
-  resultData.weight = data.result.weight
-  resultData.total = data.result.total
-  resultData.details = data.result.details
+  // 接口返回的数据在data字段里，不是result字段
+  resultData.weight = data.data.weight
+  resultData.total = data.data.total
+  resultData.details = data.data.details
 }
 
 const showModal = () => {

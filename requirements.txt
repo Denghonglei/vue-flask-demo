@@ -1,3 +1,4 @@
 Flask==3.0.2
 flask-cors==4.0.0
-aws-wsgi==0.2.7
+serverless-wsgi==3.0.1
+werkzeug==3.0.0

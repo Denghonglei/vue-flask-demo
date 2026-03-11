@@ -51,94 +51,52 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import Navbar from '../components/Navbar.vue'
-import axios from 'axios'
+import { usePagination } from '../composables/useRequest'
+import { getQuestions } from '../services/api'
 
-const searchKeyword = ref('')
-const qaList = ref([])
-const currentPage = ref(1)
-const pageSize = 10
-const loading = ref(false)
-const noMoreData = ref(false)
 const activeIndex = ref(null)
 
-const buttonText = ref('加载更多')
-
-onMounted(() => {
-  loadData()
+// 使用分页Hook，自动管理列表、分页、搜索状态
+const {
+  list,
+  loading,
+  total,
+  searchKeyword,
+  handleSearch,
+  reload,
+  changePage
+} = usePagination(getQuestions, {
+  pageSize: 10,
+  immediate: true
 })
 
-const fetchData = async (page, searchWord = '') => {
-  try {
-    const response = await axios.get(`/api/list-questions?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(searchWord)}`);
-    if (response.data.code === 0) {
-      return response.data.data;
-    } else {
-      console.error('接口返回错误：', response.data.message);
-      return [];
-    }
-  } catch (error) {
-    console.error('数据获取失败:', error);
-    // 开发环境模拟数据
-    return [
-      {key: "长发回收的流程是什么？", value: "首先您可以使用我们的估价计算器预估价格，然后选择上门回收或者快递回收，我们收到头发验收后会立即打款。"},
-      {key: "头发多长可以卖？", value: "我们回收长度30cm以上的健康长发，越长价格越高。"},
-      {key: "烫染过的头发可以回收吗？", value: "烫染过的头发也可以回收，只是价格会比原生发稍低一些。"},
-      {key: "剪发方式有什么区别？", value: "一刀剪是齐根剪下，能获得最重的重量；抽剪是剪取长发保留短发，不影响发型。"},
-      {key: "款项多久能到账？", value: "我们收到头发验收合格后，会在24小时内打款到您指定的账户。"}
-    ];
-  }
-}
+// 转换数据格式，适配页面显示
+const qaList = computed(() => {
+  return list.value.map(item => ({
+    key: item.title,
+    value: item.content
+  }))
+})
+
+const noMoreData = computed(() => {
+  return qaList.value.length >= total.value
+})
+
+const buttonText = computed(() => {
+  if (loading.value) return '加载中...'
+  if (noMoreData.value) return '没有更多数据了'
+  return '加载更多'
+})
 
 const loadData = async () => {
-  if (loading.value) return
-
-  loading.value = true
-  buttonText.value = '加载中...'
-
-  const data = await fetchData(currentPage.value, searchKeyword.value)
-  if (data.length > 0) {
-    qaList.value.push(...data)
-    currentPage.value++
-    if (data.length < pageSize) {
-      noMoreData.value = true
-      buttonText.value = '没有更多数据了'
-    } else {
-      buttonText.value = '加载更多'
-    }
-  } else {
-    noMoreData.value = true
-    buttonText.value = '没有更多数据了'
-  }
-
-  loading.value = false
+  if (loading.value || noMoreData.value) return
+  await changePage(1)
 }
 
-const searchQAs = async () => {
-  if (loading.value) return
-
-  qaList.value = []
-  currentPage.value = 1
-  noMoreData.value = false
-  loading.value = true
-  buttonText.value = '搜索中...'
-
-  const data = await fetchData(currentPage.value, searchKeyword.value)
-  qaList.value = data
-  currentPage.value++
-
-  if (data.length === 0) {
-    noMoreData.value = true
-    buttonText.value = '没有相关数据'
-  } else if (data.length < pageSize) {
-    noMoreData.value = true
-    buttonText.value = '没有更多数据了'
-  } else {
-    buttonText.value = '加载更多'
-  }
-
-  loading.value = false
+const searchQAs = () => {
+  handleSearch(searchKeyword.value)
 }
 
 const toggleQuestion = (index) => {

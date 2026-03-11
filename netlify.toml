@@ -1,21 +1,21 @@
 [build]
-  command = "npm install && npm run build"
+  command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
 
 [dev]
   command = "npm run dev"
-  targetPort = 3000
-  port = 8888
+  targetPort = 3001
 
+# 所有 /api/* 请求都转发到统一的 Node.js 入口
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/lambda_function/:splat"
-  status = 200
-  headers = {Access-Control-Allow-Origin = "*"}
+from = "/api/*"
+to = "/.netlify/functions/api"
+status = 200
+force = true
 
+# SPA 前端路由兜底
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  condition = {not = {path = ["/api/*", "/.netlify/*"]}}
+from = "/*"
+to = "/index.html"
+status = 200
