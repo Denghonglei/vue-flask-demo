@@ -1,43 +1,9 @@
-import { spawn, execSync } from 'child_process';
+import { spawn } from 'child_process';
 import path from 'path';
 
-// Python执行路径适配：尝试多个可能的Python命令
-let pythonExec = null;
-
-// 检测可用的Python命令
+// Python执行路径适配：线上Netlify环境默认有python3，本地用python
 const getPythonExec = () => {
-  if (pythonExec) return pythonExec;
-
-  const possiblePythonExecs = process.env.NETLIFY
-    ? ['python3', 'python']
-    : ['python', 'python3', 'py'];
-
-  for (const exec of possiblePythonExecs) {
-    try {
-      execSync(`${exec} --version`, { stdio: 'ignore' });
-      pythonExec = exec;
-      return pythonExec;
-    } catch (e) {
-      // 继续尝试下一个
-    }
-  }
-
-  // 兜底方案：硬编码常用路径
-  const fallbackPaths = process.env.NETLIFY
-    ? ['/usr/bin/python3', '/usr/local/bin/python3']
-    : ['C:\\Python39\\python.exe', 'C:\\Python310\\python.exe', '/usr/bin/python3'];
-
-  for (const execPath of fallbackPaths) {
-    try {
-      execSync(`${execPath} --version`, { stdio: 'ignore' });
-      pythonExec = execPath;
-      return pythonExec;
-    } catch (e) {
-      // 继续尝试下一个
-    }
-  }
-
-  throw new Error('未找到可用的Python执行程序，请检查环境配置');
+  return process.env.NETLIFY ? 'python3' : 'python';
 };
 
 // 路径拼接：使用 __dirname 确保本地和线上环境路径一致
