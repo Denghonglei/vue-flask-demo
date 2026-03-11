@@ -47,8 +47,14 @@ export const handler = async (event, context) => {
   }
 
   try {
-    // 2. 获取请求路径
-    const requestPath = event.path;
+    // 2. 获取请求路径（兼容本地和线上环境）
+    // 线上环境经过redirect转发，需要从x-nf-original-url头获取原始路径
+    let requestPath = event.headers['x-nf-original-url'] || event.path;
+    // 提取/api/开头的路径部分
+    const apiPathMatch = requestPath.match(/\/api\/[^?#]+/);
+    if (apiPathMatch) {
+      requestPath = apiPathMatch[0];
+    }
 
     // 3. 匹配对应的 Python 脚本相对路径
     const pythonScriptRelativePath = routeMap[requestPath];
