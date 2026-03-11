@@ -1,9 +1,13 @@
 import { spawn } from 'child_process';
 import path from 'path';
 
-// Python执行路径适配：线上Netlify环境默认有python3，本地用python
+// Python执行路径适配
 const getPythonExec = () => {
-  return process.env.NETLIFY ? 'python3' : 'python';
+  // 线上Netlify环境用python3
+  if (process.env.NETLIFY) return 'python3';
+  // 本地环境依次尝试python、python3、py（适配Windows/macOS/Linux）
+  if (process.platform === 'win32') return 'py';
+  return 'python3';
 };
 
 // 路径拼接：使用 __dirname 确保本地和线上环境路径一致
@@ -49,39 +53,45 @@ export const handler = async (event, context) => {
   }
 
   try {
-    // 2. 获取请求路径（优先从查询参数获取，兼容Netlify重定向）
+    // 2. 获取请求路径（支持多种访问方式）
     let requestPath = null;
 
-    // 最高优先级：从redirect传递的查询参数获取原始路径
+    // 方式1：从redirect传递的查询参数获取原始路径（推荐方式）
     if (event.queryStringParameters?.path) {
       requestPath = event.queryStringParameters.path;
     } else {
-      // 备用方案：尝试从各种可能的头获取
-      requestPath = event.path;
-      const possibleHeaders = [
-        'x-nf-original-url',
-        'X-Nf-Original-Url',
-        'X-NF-ORIGINAL-URL',
-        'referer',
-        'Referer'
-      ];
+      // 方式2：直接从event.path提取（当直接访问函数路径时）
+      const pathMatch = event.path.match(/\/api\/[^?#]+/);
+      if (pathMatch) {
+        requestPath = pathMatch[0];
+      } else {
+        // 方式3：尝试从各种头获取
+        requestPath = event.path;
+        const possibleHeaders = [
+          'x-nf-original-url',
+          'X-Nf-Original-Url',
+          'X-NF-ORIGINAL-URL',
+          'referer',
+          'Referer'
+        ];
 
-      for (const header of possibleHeaders) {
-        if (event.headers[header]) {
-          requestPath = event.headers[header];
-          break;
+        for (const header of possibleHeaders) {
+          if (event.headers[header]) {
+            const headerMatch = event.headers[header].match(/\/api\/[^?#]+/);
+            if (headerMatch) {
+              requestPath = headerMatch[0];
+              break;
+            }
+          }
         }
-      }
 
-      // 如果有rawUrl字段也尝试使用
-      if (event.rawUrl) {
-        requestPath = event.rawUrl;
-      }
-
-      // 提取/api/开头的路径部分
-      const apiPathMatch = requestPath.match(/\/api\/[^?#]+/);
-      if (apiPathMatch) {
-        requestPath = apiPathMatch[0];
+        // 方式4：从rawUrl提取
+        if (event.rawUrl) {
+          const rawMatch = event.rawUrl.match(/\/api\/[^?#]+/);
+          if (rawMatch) {
+            requestPath = rawMatch[0];
+          }
+        }
       }
     }
 
